@@ -1,90 +1,93 @@
-import {Component} from 'react'
-import './index.css'
+import React, { Component } from 'react';
+import './index.css';
 
-const keys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';']
+const keys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';'];
 
 class MainPage extends Component {
-  state = {
-    inputVal: '',
-    initialValue: keys[Math.floor(Math.random() * keys.length)],
-    minutes: 5,
-    seconds: 0,
-    inProgress: false,
-    inputFieldError: false,
-    questionedKeys: [],
-    answeredKeys: [],
-    testCompleted: false,
+  constructor(props) {
+    super(props);
+    this.state = {
+      inputVal: '',
+      initialValue: this.getRandomKey(),
+      minutes: 5,
+      seconds: 0,
+      inProgress: false,
+      inputFieldError: false,
+      questionedKeys: [],
+      answeredKeys: [],
+      testCompleted: false,
+    };
+    this.myInterval = null;
   }
 
   componentWillUnmount() {
-    clearInterval(this.myInterval)
+    clearInterval(this.myInterval);
   }
 
-  searchValChange = event => {
-    this.setState({inputVal: event.target.value})
-  }
+  getRandomKey = () => {
+    return keys[Math.floor(Math.random() * keys.length)];
+  };
 
-  verifyKey = event => {
-    const {initialValue} = this.state
+  searchValChange = (event) => {
+    this.setState({ inputVal: event.target.value });
+  };
+
+  verifyKey = (event) => {
+    const { initialValue } = this.state;
     if (event.key !== 'Backspace') {
-      this.setState(prevstate => ({
-        questionedKeys: [...prevstate.questionedKeys, initialValue],
-      }))
+      this.setState((prevState) => ({
+        questionedKeys: [...prevState.questionedKeys, initialValue],
+      }));
       if (initialValue === event.key) {
-        this.setState(prevstate => ({
-          initialValue: keys[Math.floor(Math.random() * keys.length)],
+        this.setState((prevState) => ({
+          initialValue: this.getRandomKey(),
           inputVal: '',
           inputFieldError: false,
-          answeredKeys: [...prevstate.answeredKeys, initialValue],
-        }))
+          answeredKeys: [...prevState.answeredKeys, initialValue],
+        }));
       } else {
-        this.setState({inputFieldError: true, inputVal: ''})
+        this.setState({ inputFieldError: true, inputVal: '' });
       }
     }
-  }
+  };
 
   startBtn = () => {
-    this.setState({inProgress: true})
+    this.setState({ inProgress: true });
     this.myInterval = setInterval(() => {
-      const {seconds, minutes} = this.state
+      const { seconds, minutes } = this.state;
       if (seconds > 0) {
-        this.setState(prevstate => ({
-          seconds: prevstate.seconds - 1,
-        }))
+        this.setState((prevState) => ({
+          seconds: prevState.seconds - 1,
+        }));
       }
       if (seconds === 0) {
         if (minutes === 0) {
-          clearInterval(this.myInterval)
-          this.setState({testCompleted: true})
+          clearInterval(this.myInterval);
+          this.setState({ testCompleted: true });
         } else {
-          this.setState(prevstate => ({
-            minutes: prevstate.minutes - 1,
+          this.setState((prevState) => ({
+            minutes: prevState.minutes - 1,
             seconds: 59,
-          }))
+          }));
         }
       }
-    }, 1000)
-  }
+    }, 1000);
+  };
 
   restartBtnClicked = () => {
-    this.setState({
-      inputVal: '',
-      initialValue: keys[Math.floor(Math.random() * keys.length)],
-      minutes: 5,
-      seconds: 0,
-      inProgress: false,
-      inputFieldError: false,
-      questionedKeys: [],
-      answeredKeys: [],
-      testCompleted: false,
-    })
-    clearInterval(this.myInterval)
-  }
+    this.resetState();
+    clearInterval(this.myInterval);
+  };
 
   stopBtnClicked = () => {
+    this.resetState();
+    clearInterval(this.myInterval);
+  };
+
+  resetState = () => {
     this.setState({
       inputVal: '',
-      initialValue: keys[Math.floor(Math.random() * keys.length)],
+      initialValue: this.getRandomKey(),
       minutes: 5,
       seconds: 0,
       inProgress: false,
@@ -92,27 +95,16 @@ class MainPage extends Component {
       questionedKeys: [],
       answeredKeys: [],
       testCompleted: false,
-    })
-    clearInterval(this.myInterval)
-  }
+    });
+  };
 
   renderResultView = () => {
-    const {minutes, seconds, questionedKeys, answeredKeys} = this.state
-    let accuracy = 0
-    let wpm = 0
-    let kpm = 0
-    if (minutes === 0 && seconds === 0) {
-      if (answeredKeys.length === 0) {
-        accuracy = 0
-      } else {
-        accuracy = Math.ceil(
-          (answeredKeys.length / questionedKeys.length) * 100,
-        )
-      }
-      wpm = answeredKeys.length
-      kpm = Math.ceil(wpm / 5)
-      console.log(accuracy, wpm)
-    }
+    const { minutes, seconds, questionedKeys, answeredKeys } = this.state;
+    const totalKeysPressed = answeredKeys.length;
+    const accuracy = totalKeysPressed > 0 ? Math.ceil((totalKeysPressed / questionedKeys.length) * 100) : 0;
+    const wpm = totalKeysPressed;
+    const kpm = Math.ceil(wpm / 5);
+
     return (
       <>
         <h1 className="resultsHeading">Results</h1>
@@ -123,112 +115,7 @@ class MainPage extends Component {
           <li className="resultItem">
             <p className="resultsTextCSS">Accuracy: {accuracy}%</p>
           </li>
-          <li className="resultItem">
-            <p className="resultsTextCSS">
-              K<span className="spanTextCSS">eys </span>P
-              <span className="spanTextCSS">er </span>M
-              <span className="spanTextCSS">inute</span>: {kpm}
-            </p>
-          </li>
-        </ul>
-        <button
-          type="button"
-          className="startBtn"
-          onClick={this.restartBtnClicked}
-        >
-          RESTART
-        </button>
-      </>
-    )
-  }
-
-  renderNonResultView = () => {
-    const {inProgress} = this.state
-    switch (inProgress) {
-      case true:
-        return this.renderTestWindow()
-      case false:
-        return this.renderMainScreenView()
-      default:
-        return null
-    }
-  }
-
-  renderTestWindow = () => {
-    const {inputVal, initialValue, inputFieldError} = this.state
-    const inputClass = inputFieldError ? 'redText' : 'blackText'
-    return (
-      <>
-        <div className="stopContainer">
-          <button
-            type="button"
-            className="stopBtn"
-            onClick={this.stopBtnClicked}
-          >
-            QUIT PRACTICE
-          </button>
-        </div>
-        <p className="questionKeyCSS">
-          Enter the following key:
-          <span className="quesKeyCSS"> {initialValue}</span>
-        </p>
-        <input
-          onChange={this.searchValChange}
-          onKeyDown={this.verifyKey}
-          className={inputClass}
-          placeholder="Type here..."
-          value={inputVal}
-        />
-      </>
-    )
-  }
-
-  renderMainScreenView = () => (
-    <>
-      <p className="descriptionCSS">
-        Touch typing is a technique that helps you type faster and more
-        efficiently by using all your fingers. Typing with this technique is
-        important because it can greatly improve your productivity, especially
-        if you have a type-intensive job, like a programmer or a writer.
-      </p>
-      <div className="cardContainer">
-        <h1 className="textCSS">Practicing with Orthodox Hand Position</h1>
-        <img
-          src="https://opentextbc.ca/computerstudies/wp-content/uploads/sites/322/2020/11/Home-Row-Keys.png"
-          alt="handsPosition"
-          className="positionCSS"
-        />
-        <button onClick={this.startBtn} className="startBtn" type="button">
-          START
-        </button>
-      </div>
-    </>
-  )
-
-  render() {
-    const {minutes, seconds, testCompleted} = this.state
-    return (
-      <div className="mainContainer">
-        <div className="headingAndTimerContainer">
-          <h1 className="mainHeading">Touch Typing</h1>
-          <div className="timerContainer">
-            {minutes === 0 && seconds === 0 ? (
-              <h1 className="timerTextCSS">Time Out!</h1>
-            ) : (
-              <h1 className="timerTextCSS">
-                <span className="minutesSpanCSS">Time Left: </span> 0{minutes}:
-                {seconds < 10 ? `0${seconds}` : seconds}
-              </h1>
-            )}
-          </div>
-        </div>
-
-        <div className="subContainer">
-          {testCompleted ? this.renderResultView() : this.renderNonResultView()}
-        </div>
-      </div>
-    )
-  }
+        </>
+)
 }
-
 export default MainPage
